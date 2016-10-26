@@ -1,3 +1,22 @@
+/*
+  Copyright 2016,2017 Yufeng Zhang
+
+  This file is part of ObjectStorageServer.
+
+  ObjectStorageServer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  ObjectStorageServer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package cn.zyf;
 
 import com.zyf.utils.conf.ConfigTree;
@@ -44,8 +63,8 @@ public class ObjectStorageServer {
     private static final long DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS = 60;
 
     public static BlackListManager blackListManager;
-    public static AuthenticationManager authenticationManager;
-    public static AuthorizationManager authorizationManager;
+    static AuthenticationManager authenticationManager;
+    static AuthorizationManager authorizationManager;
 
     private void run(String host, int port, int packageSize) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
