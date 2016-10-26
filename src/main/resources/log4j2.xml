@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Properties>
+        <Property name="log-path">../logs</Property>
+        <Property name="log-name">ObjectStorageServer</Property>
+    </Properties>
+    <Appenders>
+        <Console name="console-log" target="SYSTEM_OUT">
+            <PatternLayout pattern="%-5p %d [%t] (%F:%L) - %msg%n"/>
+        </Console>
+
+        <RollingFile name="RollingFile-info" fileName="${log-path}/${log-name}.log"
+                     filePattern="${log-path}/${log-name}-%d{yyyyMMdd}.log.gz">
+            <PatternLayout pattern="%-5p %d [%t] (%F:%L) - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingFile>
+        <RollingFile name="RollingFile-err" fileName="${log-path}/${log-name}-err.log"
+                     filePattern="${log-path}/${log-name}-err-%d{yyyyMMdd}.log.gz">
+            <PatternLayout pattern="%-5p %d [%t] (%F:%L) - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Logger name="net.qihoo" level="info" additivity="false">
+            <appender-ref ref="RollingFile-info" level="info"/>
+        </Logger>
+        <Root level="info" additivity="false">
+            <AppenderRef ref="console-log"/>
+        </Root>
+    </Loggers>
+</Configuration>

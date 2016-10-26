@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+    <!-- bind server:port -->
+    <bind>0.0.0.0:8484</bind>
+
+    <!-- max request size in bytes -->
+    <packageSize>65535</packageSize>
+
+    <!-- 黑名单相关配置 -->
+    <blackList>
+        <!--<class>-->
+            <!--<name>net.qihoo.protocols.impl.DefaultBlackListManager</name>-->
+            <!--<params>-->
+                <!--<paramName type="String">paramValue</paramName>-->
+            <!--</params>-->
+        <!--</class>-->
+        <path>xxxx</path>
+        <!-- reload period in seconds -->
+        <period>60</period>
+    </blackList>
+
+    <!-- 如果不使用外部认证，则不需要配置该项 -->
+    <authentication>
+        <class>org.pacakge.classname</class>
+        <params>
+            <!-- 外部认证所需要的配置写在这里 -->
+        </params>
+    </authentication>
+
+    <!-- 如果不使用外部鉴权，则不需要配置该项 -->
+    <authorization>
+        <class>org.pacakge.classname</class>
+        <params>
+            <!-- 外部鉴权所需要的配置写在这里 -->
+        </params>
+    </authorization>
+
+    <!-- 如果不使用外部cache，则不需要配置该项。xxx为cluster_conf.xml中已有的名字，且type仅为redis/memcached -->
+    <cache>xxxx</cache>
+
+    <!-- 设置系统的元数据信息存放的集群 -->
+    <storage>
+        <meta>xxxx</meta> <!-- cluster name in cluster_conf.xml  only hbase/cassandra/mysql/oracle -->
+    </storage>
+
+</configuration>
