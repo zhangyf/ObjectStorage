@@ -3,9 +3,11 @@ An ObjectStorage based on netty. ObjectStorage APIs are partly compatible with A
 
 ## 1. License
 
+**GPL v3.0**
+
 ## 2. Dependencies
 ### 2.1 Libraries
- + netty-all
+ + [netty-all](http://netty.io/)
  + log4j-api
  + log4j-core
  + log4j-slf4j-impl
@@ -30,6 +32,7 @@ After building two jars will be generated under target directory:
 
 #### 4.1.1 Server Config
 
+
     <?xml version="1.0" encoding="UTF-8" ?>
     <configuration>
         <!-- bind server:port -->
@@ -38,41 +41,45 @@ After building two jars will be generated under target directory:
         <!-- max request size in bytes -->
         <packageSize>65535</packageSize>
 
-        <!-- 黑名单相关配置 -->
+        <!-- black list config -->
         <blackList>
-            <!--<class>-->
-                <!--<name>net.qihoo.protocols.impl.DefaultBlackListManager</name>-->
-                <!--<params>-->
-                    <!--<paramName type="String">paramValue</paramName>-->
-                <!--</params>-->
-            <!--</class>-->
+            <!-- config it if want to use custom BlackListManager implenment
+                <class>
+                <name>net.qihoo.protocols.impl.DefaultBlackListManager</name>
+                <params>
+                    <paramName type="String">paramValue</paramName>
+                </params>
+                </class>
+            -->
+            
+            <!-- black list file path -->
             <path>xxxx</path>
-            <!-- reload period in seconds -->
+            <!-- reload black list file period in seconds -->
             <period>60</period>
         </blackList>
 
-        <!-- 如果不使用外部认证，则不需要配置该项 -->
+        <!-- config it if want to use custom authentication -->
         <authentication>
             <class>org.pacakge.classname</class>
             <params>
-                <!-- 外部认证所需要的配置写在这里 -->
             </params>
         </authentication>
 
-        <!-- 如果不使用外部鉴权，则不需要配置该项 -->
+        <!-- config it if want to use custom authorization -->
         <authorization>
             <class>org.pacakge.classname</class>
             <params>
-                <!-- 外部鉴权所需要的配置写在这里 -->
             </params>
         </authorization>
 
-        <!-- 如果不使用外部cache，则不需要配置该项。xxx为cluster_conf.xml中已有的名字，且type仅为redis/memcached -->
+        <!-- config it to use a cluster for cache.
+         xxx is a name presented in cluster config file，whose type is valid only for redis/memcached -->
         <cache>xxxx</cache>
 
-        <!-- 设置系统的元数据信息存放的集群 -->
+        <!-- config it to specify where object meta should store -->
         <storage>
-            <meta>xxxx</meta> <!-- cluster name in cluster_conf.xml  only hbase/cassandra/mysql/oracle -->
+            <!-- name is presented in cluster config file and only be one of hbase/cassandra/mysql/oracle -->
+            <meta>xxxx</meta> 
         </storage>
     </configuration>
 
