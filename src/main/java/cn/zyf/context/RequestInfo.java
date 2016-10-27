@@ -14,7 +14,7 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+  along with ObjectStorageServer.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package cn.zyf.context;
@@ -32,45 +32,20 @@ import java.util.Map;
 /**
  * Created by zhangyufeng on 2016/10/24.
  */
+
+enum Acl { PUBLIC_READ_WRITE, PUBLIC_READ, PRIVATE};
+
 public class RequestInfo {
     private static Logger LOG = LoggerFactory.getLogger(RequestInfo.class);
     private HttpMethod verb;
-
-    public HttpMethod getVerb() {
-        return verb;
-    }
-
-    public void setVerb(HttpMethod verb) {
-        this.verb = verb;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public String getBucketName() {
-        return bucketName;
-    }
-
-    public void setBucketName(String bucketName) {
-        this.bucketName = bucketName;
-    }
-
-    public String getObjectName() {
-        return objectName;
-    }
-
-    public void setObjectName(String objectName) {
-        this.objectName = objectName;
-    }
-
+    private Acl acl;
+    private int contentLength;
     private String path;
     private String bucketName;
     private String objectName;
+    private String contentType;
+    private String contentMD5;
+    private String dateStr;
     private Map<String, String> params;
 
     private String decodeUri(String uri) {
@@ -83,7 +58,7 @@ public class RequestInfo {
         }
     }
 
-    private String getPath(String fullUri) {
+    private String parsePath(String fullUri) {
 
         fullUri = decodeUri(fullUri);
         String ret = (fullUri != null && !fullUri.equals("?") && fullUri.indexOf('?') > 0) ?
@@ -123,18 +98,97 @@ public class RequestInfo {
         this.bucketName = "";
         this.objectName = "";
         this.params = null;
+        this.acl = Acl.PRIVATE;
+        this.contentLength = 0;
+        this.contentMD5 = "";
+        this.contentType = "";
+        this.dateStr = "";
     }
 
-    public void parse(FullHttpRequest msg) {
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public int getContentLength() {
+        return contentLength;
+    }
+
+    public void setContentLength(int contentLength) {
+        this.contentLength = contentLength;
+    }
+
+    public String getContentMD5() {
+        return contentMD5;
+    }
+
+    public void setContentMD5(String contentMD5) {
+        this.contentMD5 = contentMD5;
+    }
+
+    public String getDateStr() {
+        return dateStr;
+    }
+
+    public void setDateStr(String dateStr) {
+        this.dateStr = dateStr;
+    }
+
+    public HttpMethod getVerb() {
+        return verb;
+    }
+
+    public void setVerb(HttpMethod verb) {
+        this.verb = verb;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getBucketName() {
+        return bucketName;
+    }
+
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
+
+    public String getObjectName() {
+        return objectName;
+    }
+
+    public void setObjectName(String objectName) {
+        this.objectName = objectName;
+    }
+
+    public Acl getAcl() {
+        return acl;
+    }
+
+    public void setAcl(Acl a) {
+        this.acl = a;
+    }
+
+    public void parse(FullHttpRequest msg) throws UnsupportedOperationException{
+        setVerb(msg.method());
+
         String decodedURI = decodeUri(msg.uri());
-        path = getPath(decodedURI);
-        String [] entries = path.split("/");
+        setPath(parsePath(decodedURI));
+        String [] entries = getPath().split("/");
 
         if (entries.length >= 2) {
-            bucketName = entries[1];
+            setBucketName(entries[1]);
 
             if (entries.length > 2) {
-                objectName = entries[2];
+                setObjectName(entries[2]);
             }
         }
 
@@ -142,13 +196,51 @@ public class RequestInfo {
             String paramStr = (decodedURI.indexOf("?") > 0) ? decodedURI.substring(decodedURI.indexOf("?") + 1) : "";
             this.params = getParameters(paramStr);
         }
+
+        if (msg.headers().contains("x-oss-acl")) {
+            switch (msg.headers().get("x-oss-acl")) {
+                case "public-read-write" :
+                    setAcl(Acl.PUBLIC_READ_WRITE);
+                    break;
+                case "public-read":
+                    setAcl(Acl.PUBLIC_READ);
+                    break;
+                case "private" :
+                    setAcl(Acl.PRIVATE);
+                    break;
+                default:
+                    setAcl(Acl.PRIVATE);
+                    break;
+            }
+        }
+
+        if (msg.headers().contains("content-length")) {
+            setContentLength(Integer.parseInt(msg.headers().get("content-length")));
+        }
+
+        if (msg.headers().contains("content-type")) {
+            setContentType(msg.headers().get("content-type"));
+        }
+
+        if (msg.headers().contains("content-md5")) {
+            setContentMD5(msg.headers().get("content-md5"));
+        }
+
+        if (msg.headers().contains("date")) {
+            setDateStr(msg.headers().get("date"));
+        }
     }
 
     public String toString() {
-        return "{ verb=" + this.verb
-                + " path=" + this.path
-                + " bucketName=" + this.bucketName
-                + " objectName=" + this.objectName
+        return "{ verb=" + getVerb()
+                + " path=" + getPath()
+                + " bucketName=" + getBucketName()
+                + " objectName=" + getObjectName()
+                + " acl=" + getAcl()
+                + " content-type=" + getContentType()
+                + " content-length=" + getContentLength()
+                + " content-md5=" + getContentMD5()
+                + " date=" + getDateStr()
                 + " params=" + this.params + " }";
     }
 }

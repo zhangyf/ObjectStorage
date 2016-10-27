@@ -14,11 +14,12 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+  along with ObjectStorageServer.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package cn.zyf.protocols.impl;
 
+import cn.zyf.context.RequestInfo;
 import cn.zyf.protocols.AuthenticationManager;
 
 /**
@@ -26,7 +27,7 @@ import cn.zyf.protocols.AuthenticationManager;
  */
 public class DefaultAuthenticationManager extends AuthenticationManager {
 
-    public boolean checkAuth() {
+    public boolean checkAuth(RequestInfo requestInfo) {
         return false;
     }
 }

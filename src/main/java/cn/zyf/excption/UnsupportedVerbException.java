@@ -17,14 +17,14 @@
   along with ObjectStorageServer.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cn.zyf.protocols;
-
-import cn.zyf.context.RequestInfo;
+package cn.zyf.excption;
 
 /**
- * Created by zhangyufeng on 2016/10/26.
+ * Created by zhangyufeng on 2016/10/27.
  */
-public abstract class AuthenticationManager {
+public class UnsupportedVerbException extends RuntimeException {
 
-    public boolean checkAuth(RequestInfo requestInfo) { return false;}
+    public UnsupportedVerbException(String message) {
+        super(message);
+    }
 }

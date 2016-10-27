@@ -14,7 +14,7 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+  along with ObjectStorageServer.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package cn.zyf.utils;
@@ -30,6 +30,7 @@ public class Constants {
     public static final int ERR_CODE_BAD_REQUEST = 60400;
     public static final int ERR_CODE_AUTHEN_FAILED = 60401;
     public static final int ERR_CODE_AUTHOR_FAILED = 60402;
+    public static final int ERR_CODE_INTERNAL_ERROR = 60500;
 
     public static final String ERR_MSG_DEFAULT = "INTERNAL SERVER ERROR";
 
@@ -40,6 +41,7 @@ public class Constants {
         tmpMap.put(ERR_CODE_BAD_REQUEST, "Bad Request");
         tmpMap.put(ERR_CODE_AUTHEN_FAILED, "Authentication failed");
         tmpMap.put(ERR_CODE_AUTHOR_FAILED, "Authorization failed");
+        tmpMap.put(ERR_CODE_INTERNAL_ERROR, "Internal Service Error");
         statusMap = Collections.unmodifiableMap(tmpMap);
     }
 

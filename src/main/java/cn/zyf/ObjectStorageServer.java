@@ -14,11 +14,12 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+  along with ObjectStorageServer.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package cn.zyf;
 
+import cn.zyf.handler.ObjectStorageHandler;
 import com.zyf.utils.conf.ConfigTree;
 import com.zyf.utils.conf.ConfigTreeNode;
 import com.zyf.utils.conf.ConfigUtils;
@@ -63,8 +64,8 @@ public class ObjectStorageServer {
     private static final long DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS = 60;
 
     public static BlackListManager blackListManager;
-    static AuthenticationManager authenticationManager;
-    static AuthorizationManager authorizationManager;
+    public static AuthenticationManager authenticationManager;
+    public static AuthorizationManager authorizationManager;
 
     private void run(String host, int port, int packageSize) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -206,14 +207,13 @@ public class ObjectStorageServer {
         LOG.info("================================");
         (new ObjectStorageServer()).run(entries[0], Integer.parseInt(entries[1]), packageSize);
 
-
     }
 
     public static void main(String[] args) {
-        String configFilePath = (System.getProperties().getProperty("config") == null) ?
+        String configFilePath = (System.getProperties().getProperty("serviceConfig") == null) ?
                 ObjectStorageServer.class.getResource("/serviceConfig.xml").toString()
                 :
-                System.getProperties().getProperty("config");
+                System.getProperties().getProperty("serviceConfig");
 
         LOG.info("load config file from " + configFilePath);
         ConfigTree configuration = null;
