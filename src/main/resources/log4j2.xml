@@ -25,7 +25,7 @@
         </RollingFile>
     </Appenders>
     <Loggers>
-        <Logger name="net.qihoo" level="info" additivity="false">
+        <Logger name="cn.zyf" level="info" additivity="false">
             <appender-ref ref="RollingFile-info" level="info"/>
         </Logger>
         <Root level="info" additivity="false">

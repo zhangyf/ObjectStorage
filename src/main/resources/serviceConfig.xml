@@ -21,18 +21,21 @@
 
     <!-- 如果不使用外部认证，则不需要配置该项 -->
     <authentication>
+        <!--
         <class>org.pacakge.classname</class>
         <params>
-            <!-- 外部认证所需要的配置写在这里 -->
+
         </params>
+        -->
     </authentication>
 
     <!-- 如果不使用外部鉴权，则不需要配置该项 -->
     <authorization>
+        <!--
         <class>org.pacakge.classname</class>
         <params>
-            <!-- 外部鉴权所需要的配置写在这里 -->
         </params>
+        -->
     </authorization>
 
     <!-- 如果不使用外部cache，则不需要配置该项。xxx为cluster_conf.xml中已有的名字，且type仅为redis/memcached -->

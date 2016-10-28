@@ -19,7 +19,7 @@
 
 package cn.zyf;
 
-import cn.zyf.handler.ObjectStorageHandler;
+import cn.zyf.handler.*;
 import com.zyf.utils.conf.ConfigTree;
 import com.zyf.utils.conf.ConfigTreeNode;
 import com.zyf.utils.conf.ConfigUtils;
@@ -70,6 +70,7 @@ public class ObjectStorageServer {
     private void run(String host, int port, int packageSize) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        EventLoopGroup backendGroup = new NioEventLoopGroup();
 
         try {
             ServerBootstrap b = new ServerBootstrap();
@@ -81,7 +82,11 @@ public class ObjectStorageServer {
                             ch.pipeline().addLast("http-aggregator", new HttpObjectAggregator(packageSize));
                             ch.pipeline().addLast("http-chunked", new ChunkedWriteHandler());
                             ch.pipeline().addLast("http-encoder", new HttpResponseEncoder());
-                            ch.pipeline().addLast("req-handler", new ObjectStorageHandler());
+                            ch.pipeline().addLast("oss-decoder", new ParseRequestHandler());
+                            ch.pipeline().addLast("oss-filter", new FilterRequestHandler());
+                            ch.pipeline().addLast("oss-authen", new AuthenticationHandler());
+                            ch.pipeline().addLast("oss-author", new AuthorizationHandler());
+                            ch.pipeline().addLast(backendGroup, "oss-backend", new ObjectStorageHandler());
                         }
                     });
 
@@ -99,14 +104,14 @@ public class ObjectStorageServer {
     private static Object createObjectByReflection(ConfigTreeNode configTreeNode)
             throws NoSuchMethodException, ClassNotFoundException,
             InvocationTargetException, IllegalAccessException, InstantiationException {
-        ConfigTreeNode classNode = configTreeNode.get("class");
-        String className = classNode.get("name").getStringValue();
+        ConfigTreeNode classNode = configTreeNode.containsKey("class") ? configTreeNode.get("class") : null;
+        String className = (classNode != null && classNode.containsKey("name")) ? classNode.get("name").getStringValue() : "" ;
 
         LOG.info("custom class:\t" + className);
 
         Class<?>[] paramsTypes = null;
         Object[] paramsObjs = null;
-        if (classNode.containsKey("params")) {
+        if (classNode != null && classNode.containsKey("params")) {
             ConfigTreeNode paramsNode = classNode.get("params");
             Set<String> paramsNames = paramsNode.getSubKeys();
             paramsTypes = new Class[paramsNames.size()];
@@ -160,7 +165,6 @@ public class ObjectStorageServer {
         String blackListFilePath = null;
         ConfigTreeNode blacklistConfig = config.containsKey("blackList") ? config.get("blackList") : null;
         if (blacklistConfig != null) {
-
             if (blacklistConfig.containsKey("class")) {
                 blackListManager = (BlackListManager) createObjectByReflection(blacklistConfig);
             } else {

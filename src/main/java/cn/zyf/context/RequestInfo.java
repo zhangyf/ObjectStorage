@@ -28,6 +28,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Created by zhangyufeng on 2016/10/24.
@@ -40,6 +41,7 @@ public class RequestInfo {
     private HttpMethod verb;
     private Acl acl;
     private int contentLength;
+    private String id;
     private String path;
     private String bucketName;
     private String objectName;
@@ -103,6 +105,16 @@ public class RequestInfo {
         this.contentMD5 = "";
         this.contentType = "";
         this.dateStr = "";
+        setId("req_" + UUID.randomUUID());
+    }
+
+
+    public String getId() {
+        return id;
+    }
+
+    private void setId(String id) {
+        this.id = id;
     }
 
     public String getContentType() {

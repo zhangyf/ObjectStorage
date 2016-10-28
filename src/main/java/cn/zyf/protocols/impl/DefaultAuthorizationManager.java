@@ -28,6 +28,6 @@ import cn.zyf.protocols.AuthorizationManager;
 public class DefaultAuthorizationManager extends AuthorizationManager {
 
     public boolean checkAuth(RequestInfo requestInfo) {
-        return false;
+        return true;
     }
 }

@@ -19,18 +19,10 @@
 
 package cn.zyf.handler;
 
-import cn.zyf.ObjectStorageServer;
 import cn.zyf.context.RequestInfo;
-import cn.zyf.excption.AuthenticationFailureException;
-import cn.zyf.excption.AuthorizationFailureException;
-import cn.zyf.excption.InvalidBucketException;
-import cn.zyf.excption.UnsupportedVerbException;
-import cn.zyf.utils.Constants;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
-import org.json.JSONObject;
+import io.netty.handler.codec.http.HttpMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,67 +30,8 @@ import org.slf4j.LoggerFactory;
  * Created by zhangyufeng on 2016/10/24.
  */
 
-public class ObjectStorageHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class ObjectStorageHandler extends SimpleChannelInboundHandler<RequestInfo> {
     private static Logger LOG = LoggerFactory.getLogger(ObjectStorageHandler.class);
-
-    private void sendResponse(ChannelHandlerContext ctx, int errCode) {
-        HttpResponseStatus status;
-
-
-        switch (errCode) {
-            case Constants.ERR_CODE_BAD_REQUEST:
-                status = HttpResponseStatus.BAD_REQUEST;
-                break;
-            case Constants.ERR_CODE_AUTHEN_FAILED:
-                status = HttpResponseStatus.FORBIDDEN;
-                break;
-            case Constants.ERR_CODE_AUTHOR_FAILED:
-                status = HttpResponseStatus.METHOD_NOT_ALLOWED;
-                break;
-            default:
-                status = HttpResponseStatus.INTERNAL_SERVER_ERROR;
-                break;
-        }
-
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("errCode", -errCode);
-        jsonObject.put("errMsg", Constants.statusMap.get(errCode));
-        innerSendResponse(ctx, status, jsonObject.toString());
-    }
-
-    private void innerSendResponse(ChannelHandlerContext ctx, HttpResponseStatus status, String content) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status, Unpooled.wrappedBuffer(content.getBytes()));
-        response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
-        ctx.write(response);
-        ctx.flush();
-    }
-
-    private RequestInfo parseAndValidateRequest(FullHttpRequest msg) throws RuntimeException {
-        RequestInfo requestInfo = new RequestInfo();
-        requestInfo.parse(msg);
-
-        if (requestInfo.getVerb() != HttpMethod.GET &&
-                msg.method() != HttpMethod.PUT &&
-                msg.method() != HttpMethod.POST &&
-                msg.method() != HttpMethod.HEAD &&
-                msg.method() != HttpMethod.DELETE) {
-            throw new UnsupportedVerbException("unsupported http verb " + msg.method());
-        }
-
-        if (ObjectStorageServer.blackListManager.filter(requestInfo.getBucketName())) {
-            throw new InvalidBucketException("bucket " + requestInfo.getBucketName() + " in black list. skip it");
-        }
-
-        if (!ObjectStorageServer.authenticationManager.checkAuth(requestInfo)) {
-            throw new AuthenticationFailureException("bucket " + requestInfo.getBucketName() + " authentication failed");
-        }
-
-        if (!ObjectStorageServer.authorizationManager.checkAuth(requestInfo)) {
-            throw new AuthorizationFailureException("bucket " + requestInfo.getBucketName() + " authorization failed");
-        }
-
-        return requestInfo;
-    }
 
     private boolean isListBuckets(RequestInfo requestInfo) {
         return requestInfo.getVerb() == HttpMethod.GET
@@ -115,46 +48,16 @@ public class ObjectStorageHandler extends SimpleChannelInboundHandler<FullHttpRe
         return "";
     }
 
-    private String dispatchRequest(RequestInfo requestInfo) {
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, RequestInfo requestInfo) throws Exception {
         if (isListBuckets(requestInfo) || (requestInfo.getVerb() != HttpMethod.POST
                 && !requestInfo.getBucketName().equals("")
                 && requestInfo.getObjectName().equals(""))) {
-            return bucketProcessor(requestInfo);
+            LOG.info("start process requestID=" + requestInfo.getId() + " with bucketProcessor");
+            bucketProcessor(requestInfo);
         } else {
-            return objectProcessor(requestInfo);
+            LOG.info("start process requestID=" + requestInfo.getId() + " with objectProcessor");
+            objectProcessor(requestInfo);
         }
-    }
-
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
-        if (!msg.decoderResult().isSuccess()) {
-            LOG.info("Bad Request");
-            sendResponse(ctx, Constants.ERR_CODE_BAD_REQUEST);
-            return;
-        }
-
-        RequestInfo requestInfo;
-        try {
-            requestInfo = parseAndValidateRequest(msg);
-        } catch (RuntimeException e) {
-            LOG.error(e.getMessage(), e);
-            if (e instanceof UnsupportedVerbException) {
-                sendResponse(ctx, Constants.ERR_CODE_BAD_REQUEST);
-            } else if (e instanceof AuthenticationFailureException) {
-                sendResponse(ctx, Constants.ERR_CODE_AUTHEN_FAILED);
-            } else if (e instanceof AuthorizationFailureException) {
-                sendResponse(ctx, Constants.ERR_CODE_AUTHOR_FAILED);
-            } else if (e instanceof InvalidBucketException) {
-                sendResponse(ctx, Constants.ERR_CODE_BAD_REQUEST);
-            } else {
-                sendResponse(ctx, Constants.ERR_CODE_INTERNAL_ERROR);
-            }
-
-            return ;
-        }
-
-        LOG.info(requestInfo.toString());
-        dispatchRequest(requestInfo);
-
     }
 }
