@@ -25,7 +25,5 @@ import cn.zyf.context.RequestInfo;
  * Created by zhangyufeng on 2016/10/26.
  */
 public abstract class AuthorizationManager {
-    public boolean checkAuth(RequestInfo requestInfo) {
-        return false;
-    }
+    public abstract boolean checkAuth(RequestInfo requestInfo);
 }

@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <clusters>
-    <cluster name="xxxx" type="cassandra">
+    <cluster1 type="cassandra">
         <node>hostname1:9160</node>
         <node>hostname2:9160</node>
         <node>hostname3:9160</node>
         <node>hostname4:9160</node>
-    </cluster>
+    </cluster1>
 
-    <cluster name="xxxxx" type="hbase">
+    <cluster2 type="hbase">
         <zookeeper>
             <zkHost>hostname1:2181,hostname2:2181,hostname3:2181</zkHost>
             <zkPath priority="3">/path/to/node</zkPath>
             <zkPath priority="2">/path/to/node</zkPath>
             <zkPath priority="1">/path/to/node</zkPath>
         </zookeeper>
-    </cluster>
+    </cluster2>
 
-    <cluster name="xxxx" type="hdfs">
+    <cluster3 type="hdfs">
         <uri>hdfs://xxx.xxx.xxx.xxx:port</uri>
-    </cluster>
+    </cluster3>
 
-    <cluster name="xxxx" type="redis/memcached">
+    <cluster4 type="redis/memcached">
         <node>hostname1:port,hostname2:port,hostname3:port</node>
-    </cluster>
+    </cluster4>
 </clusters>

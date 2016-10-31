@@ -20,6 +20,15 @@
 package cn.zyf;
 
 import cn.zyf.handler.*;
+import cn.zyf.protocols.AuthenticationManager;
+import cn.zyf.protocols.AuthorizationManager;
+import cn.zyf.protocols.BlackListManager;
+import cn.zyf.protocols.ClusterManager;
+import cn.zyf.protocols.impl.DefaultAuthenticationManager;
+import cn.zyf.protocols.impl.DefaultAuthorizationManager;
+import cn.zyf.protocols.impl.DefaultBlackListManager;
+import cn.zyf.protocols.impl.DefaultClusterManager;
+import cn.zyf.tasks.BlackListReloadTask;
 import com.zyf.utils.conf.ConfigTree;
 import com.zyf.utils.conf.ConfigTreeNode;
 import com.zyf.utils.conf.ConfigUtils;
@@ -34,13 +43,6 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import cn.zyf.protocols.AuthenticationManager;
-import cn.zyf.protocols.AuthorizationManager;
-import cn.zyf.protocols.BlackListManager;
-import cn.zyf.protocols.impl.DefaultAuthenticationManager;
-import cn.zyf.protocols.impl.DefaultAuthorizationManager;
-import cn.zyf.protocols.impl.DefaultBlackListManager;
-import cn.zyf.tasks.BlackListReloadTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +50,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -59,13 +60,14 @@ import java.util.concurrent.TimeUnit;
 public class ObjectStorageServer {
     private static Logger LOG = LoggerFactory.getLogger(ObjectStorageServer.class);
 
-    private static final String DEFAULT_BIND_STR = "0.0.0.0:8400";
+    private static final String DEFAULT_BIND_STR = "0.0.0.0:8484";
     private static final int DEFAULT_PACKAGE_SIZE = 65535;
     private static final long DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS = 60;
 
     public static BlackListManager blackListManager;
     public static AuthenticationManager authenticationManager;
     public static AuthorizationManager authorizationManager;
+    public static ClusterManager clusterManager;
 
     private void run(String host, int port, int packageSize) {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -104,30 +106,53 @@ public class ObjectStorageServer {
     private static Object createObjectByReflection(ConfigTreeNode configTreeNode)
             throws NoSuchMethodException, ClassNotFoundException,
             InvocationTargetException, IllegalAccessException, InstantiationException {
-        ConfigTreeNode classNode = configTreeNode.containsKey("class") ? configTreeNode.get("class") : null;
-        String className = (classNode != null && classNode.containsKey("name")) ? classNode.get("name").getStringValue() : "" ;
+
+        ConfigTreeNode classNode = null;
+        String className = "";
+        if (configTreeNode.containsByName("class")) {
+            for (ConfigTreeNode ctn : configTreeNode.getByName("class")) {
+                classNode = ctn;
+                break;
+            }
+
+            if (classNode != null && classNode.containsByName("name")) {
+                for (ConfigTreeNode ctn : classNode.getByName("name")) {
+                    className = ctn.getStringValue();
+                    break;
+                }
+            }
+        }
 
         LOG.info("custom class:\t" + className);
 
+        ConfigTreeNode paramsNode = null;
+        String[] paramsNames;
         Class<?>[] paramsTypes = null;
         Object[] paramsObjs = null;
-        if (classNode != null && classNode.containsKey("params")) {
-            ConfigTreeNode paramsNode = classNode.get("params");
-            Set<String> paramsNames = paramsNode.getSubKeys();
-            paramsTypes = new Class[paramsNames.size()];
-            paramsObjs = new Object[paramsNames.size()];
+        if (classNode != null && classNode.containsByName("params")) {
             int idx = 0;
-            for (String paramName : paramsNames) {
-                paramsTypes[idx] = Class.forName("java.lang." + paramsNode.get(paramName).getAttribute("type"));
-                Method method = paramsNode.get(paramName).getClass().getMethod("get"
-                        + paramsNode.get(paramName).getAttribute("type")
-                        + "Value");
+            for (ConfigTreeNode ctn : classNode.getByName("params")) {
+                paramsNode = ctn;
+                break;
+            }
+            if (paramsNode != null) {
+                paramsNames = new String[paramsNode.getValue().size()];
+                for (Object ctn : paramsNode.getValue()) {
+                    paramsNames[idx++] = ((ConfigTreeNode) ctn).getName();
+                }
 
-                paramsObjs[idx] = method.invoke(paramsNode.get(paramName));
-                idx++;
+                paramsTypes = new Class[paramsNames.length];
+                paramsObjs = new Object[paramsNames.length];
 
-                LOG.info("custom class params:\t(" + paramsNode.get(paramName).getAttribute("type") + ") " + paramName
-                        + "=" + method.invoke(paramsNode.get(paramName)));
+                for (String paramName : paramsNames) {
+                    for (ConfigTreeNode ctn : paramsNode.getByName(paramName)) {
+                        idx = Integer.parseInt(ctn.getAttributes().get("idx"));
+                        paramsTypes[idx] = Class.forName("java.lang." + ctn.getAttributes().get("type"));
+                        Method method = ctn.getClass().getMethod("get" + ctn.getAttributes().get("type") + "Value");
+                        paramsObjs[idx] = method.invoke(ctn);
+                        LOG.info("custom class params: \t(" + paramsTypes[idx] + ") " + paramName + "=" + method.invoke(ctn));
+                    }
+                }
             }
         }
 
@@ -140,16 +165,25 @@ public class ObjectStorageServer {
         }
     }
 
-    private static void initServer(ConfigTree config)
+    private static void initServer(ConfigTree serviceConfig, ConfigTree clusterConfig)
             throws ClassNotFoundException, IllegalAccessException,
             InstantiationException, NoSuchMethodException, InvocationTargetException {
-        assert config != null;
+        assert serviceConfig != null;
+        assert clusterConfig != null;
 
-        String bindStr = config.containsKey("bind") ? config.get("bind").getCurrentValue() : DEFAULT_BIND_STR;
-        int packageSize = config.containsKey("packageSize") ?
-                Integer.parseInt(config.get("packageSize").getCurrentValue())
-                :
-                DEFAULT_PACKAGE_SIZE;
+        String bindStr = DEFAULT_BIND_STR;
+        int packageSize = DEFAULT_PACKAGE_SIZE;
+        if (serviceConfig.containsByName("bind")) {
+            for (ConfigTreeNode configTreeNode : serviceConfig.getByName("bind")) {
+                bindStr = configTreeNode.getStringValue();
+                break;
+            }
+
+            for (ConfigTreeNode configTreeNode : serviceConfig.getByName("packageSize")) {
+                packageSize = configTreeNode.getIntegerValue();
+                break;
+            }
+        }
 
         String[] entries = bindStr.split(":");
         assert entries.length == 2;
@@ -163,21 +197,33 @@ public class ObjectStorageServer {
         // init black list manager
         long reloadBlackListPeriod = DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS;
         String blackListFilePath = null;
-        ConfigTreeNode blacklistConfig = config.containsKey("blackList") ? config.get("blackList") : null;
+
+        ConfigTreeNode blacklistConfig = null;
+        if (serviceConfig.containsByName("blackList")) {
+            for (ConfigTreeNode ctn : serviceConfig.getByName("blackList")) {
+                blacklistConfig = ctn;
+            }
+        }
+
         if (blacklistConfig != null) {
-            if (blacklistConfig.containsKey("class")) {
+            if (blacklistConfig.containsByName("class")) {
                 blackListManager = (BlackListManager) createObjectByReflection(blacklistConfig);
             } else {
                 blackListManager = new DefaultBlackListManager();
-                blackListFilePath = blacklistConfig.containsKey("path") ?
-                        blacklistConfig.get("path").getCurrentValue()
-                        :
-                        null;
+                blackListFilePath = null;
+                if (blacklistConfig.containsByName("path")) {
+                    for (ConfigTreeNode ctn : blacklistConfig.getByName("path")) {
+                        blackListFilePath = ctn.getStringValue();
+                    }
+                }
 
-                reloadBlackListPeriod = blacklistConfig.containsKey("period") ?
-                        Long.parseLong(blacklistConfig.get("period").getCurrentValue())
-                        :
-                        DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS;
+                reloadBlackListPeriod = DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS;
+                if (blacklistConfig.containsByName("period")) {
+                    for (ConfigTreeNode ctn : blacklistConfig.getByName("period")) {
+                        reloadBlackListPeriod = ctn.getLongValue();
+                    }
+                }
+
                 LOG.info("blacklist file path:\t" + blackListFilePath);
                 LOG.info("reload blacklist period:\t" + reloadBlackListPeriod + " sec");
             }
@@ -189,35 +235,42 @@ public class ObjectStorageServer {
                 0, reloadBlackListPeriod, TimeUnit.SECONDS);
 
         // init authenticationManager
-        ConfigTreeNode authenticationConfig = config.containsKey("authentication") ? config.get("authentication") : null;
-        authenticationManager = ((authenticationConfig != null) && authenticationConfig.containsKey("class")) ?
-                (AuthenticationManager) createObjectByReflection(authenticationConfig)
-                :
-                new DefaultAuthenticationManager();
-        if (authenticationConfig == null) {
+        if (serviceConfig.containsByName("authentication")) {
+            for (ConfigTreeNode ctn : serviceConfig.getByName("authentication")) {
+                if (ctn.containsByName("class")) {
+                    authenticationManager = (AuthenticationManager) createObjectByReflection(ctn);
+                }
+            }
+        } else {
             LOG.info("use default Authentication");
+            authenticationManager = new DefaultAuthenticationManager();
         }
 
         // init authorizationManager
-        ConfigTreeNode authorizationConfig = config.containsKey("authorization") ? config.get("authorization") : null;
-        authorizationManager = ((authorizationConfig != null) && authorizationConfig.containsKey("class")) ?
-                (AuthorizationManager) createObjectByReflection(authorizationConfig)
-                :
-                new DefaultAuthorizationManager();
-        if (authorizationConfig == null) {
+        if (serviceConfig.containsByName("authorization")) {
+            for (ConfigTreeNode ctn : serviceConfig.getByName("authorization")) {
+                if (ctn.containsByName("class")) {
+                    authorizationManager = (AuthorizationManager) createObjectByReflection(ctn);
+                }
+            }
+        } else {
             LOG.info("use default Authorization");
+            authorizationManager = new DefaultAuthorizationManager();
         }
+
+        // init clusterManager
+        clusterManager = new DefaultClusterManager(clusterConfig);
 
         LOG.info("================================");
         (new ObjectStorageServer()).run(entries[0], Integer.parseInt(entries[1]), packageSize);
 
     }
 
-    public static void main(String[] args) {
-        String configFilePath = (System.getProperties().getProperty("serviceConfig") == null) ?
-                ObjectStorageServer.class.getResource("/serviceConfig.xml").toString()
+    private static ConfigTree loadConfigTree(String propertyName, String defaultFileName) {
+        String configFilePath = (System.getProperties().getProperty(propertyName) == null) ?
+                ObjectStorageServer.class.getResource(defaultFileName).toString()
                 :
-                System.getProperties().getProperty("serviceConfig");
+                System.getProperties().getProperty(propertyName);
 
         LOG.info("load config file from " + configFilePath);
         ConfigTree configuration = null;
@@ -228,8 +281,16 @@ public class ObjectStorageServer {
             System.exit(-1);
         }
 
+        return configuration;
+    }
+
+    public static void main(String[] args) {
+
+        ConfigTree serviceConfigTree = loadConfigTree("serviceConfig", "/serviceConfig.xml");
+        ConfigTree clusterConfigTree = loadConfigTree("clusterConfig", "/clusterConfig.xml");
+
         try {
-            initServer(configuration);
+            initServer(serviceConfigTree, clusterConfigTree);
         } catch (ClassNotFoundException | InstantiationException
                 | IllegalAccessException | NoSuchMethodException
                 | InvocationTargetException e) {

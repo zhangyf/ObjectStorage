@@ -9,9 +9,13 @@
     <!-- 黑名单相关配置 -->
     <blackList>
         <!--<class>-->
-            <!--<name>net.qihoo.protocols.impl.DefaultBlackListManager</name>-->
+            <!--<name>cn.zyf.protocols.impl.DefaultBlackListManager</name>-->
             <!--<params>-->
-                <!--<paramName type="String">paramValue</paramName>-->
+                <!--<paramName1 type="String" idx="0">paramValue</paramName1>-->
+                <!--<paramName2 type="Integer" idx="1">10</paramName2>-->
+                <!--<paramName3 type="Short" idx="2">20</paramName3>-->
+                <!--<paramName4 type="Long" idx="3">30</paramName4>-->
+                <!--<paramName5 type="Boolean" idx="4">false</paramName5>-->
             <!--</params>-->
         <!--</class>-->
         <path>xxxx</path>

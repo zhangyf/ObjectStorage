@@ -19,11 +19,9 @@
 
 package cn.zyf.protocols;
 
-import cn.zyf.context.RequestInfo;
-
 /**
- * Created by zhangyufeng on 2016/10/26.
+ * Created by zhangyufeng on 2016/10/28.
  */
-public abstract class AuthenticationManager {
-    public abstract boolean checkAuth(RequestInfo requestInfo);
+public abstract class ClusterManager {
+    public abstract void connect();
 }

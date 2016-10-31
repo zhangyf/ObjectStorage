@@ -24,6 +24,6 @@ package cn.zyf.protocols;
  */
 public abstract class BlackListManager {
 
-    public boolean filter(String target) { return false; }
-    public void reload(String path) {}
+    public abstract boolean filter(String target);
+    public abstract void reload(String path);
 }
