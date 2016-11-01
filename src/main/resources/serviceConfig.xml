@@ -46,8 +46,15 @@
     <cache>xxxx</cache>
 
     <!-- 设置系统的元数据信息存放的集群 -->
-    <storage>
-        <meta>xxxx</meta> <!-- cluster name in cluster_conf.xml  only hbase/cassandra/mysql/oracle -->
-    </storage>
+    <meta>
+        <name>xxxx</name> <!-- cluster name in cluster_conf.xml  only hbase/cassandra/mysql/oracle -->
+        <option>
+            <dbName>db</dbName>
+            <tableName>table</tableName>
+            <cfName>cf</cfName>
+            <cnname>cnname</cnname>
+            <ugi>user:user</ugi>
+        </option>
+    </meta>
 
 </configuration>

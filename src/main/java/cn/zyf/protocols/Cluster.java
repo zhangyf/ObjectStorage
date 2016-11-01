@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 ;
 
-public class Cluster {
+public abstract class Cluster {
     public String getName() {
         return name;
     }
@@ -82,6 +82,9 @@ public class Cluster {
         this.type = ClusterType.UNKNOWN;
         hosts = new ConcurrentSkipListSet<>();
     }
+
+    public abstract void connect();
+    public abstract Object get(Object ...args);
 
 
 }

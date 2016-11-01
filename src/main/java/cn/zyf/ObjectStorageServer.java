@@ -260,6 +260,16 @@ public class ObjectStorageServer {
 
         // init clusterManager
         clusterManager = new DefaultClusterManager(clusterConfig);
+        for (ConfigTreeNode ctn : serviceConfig.getByName("meta")) {
+            for (ConfigTreeNode node : ctn.getByName("name")) {
+                LOG.info("set meta cluster:\t" + node.getStringValue());
+                clusterManager.setMetaCluster(node.getStringValue());
+            }
+
+            for (ConfigTreeNode node : ctn.getByName("paramters")) {
+
+            }
+        }
 
         LOG.info("================================");
         (new ObjectStorageServer()).run(entries[0], Integer.parseInt(entries[1]), packageSize);

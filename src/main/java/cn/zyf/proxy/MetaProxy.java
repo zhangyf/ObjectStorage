@@ -17,16 +17,31 @@
   along with ObjectStorageServer.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cn.zyf.protocols;
+package cn.zyf.proxy;
 
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Created by zhangyufeng on 2016/10/28.
+ * Created by zhangyufeng on 2016/11/1.
  */
-public abstract class ClusterManager {
-    public abstract Cluster getClusterByName(String name);
-    public abstract void setMetaCluster(String name);
-    public abstract Cluster getMetaCluster();
-    public abstract void setMetaOption(Map<String, String> option);
+public class MetaProxy {
+    private static final Logger LOG = LoggerFactory.getLogger(MetaProxy.class);
+    private static MetaProxy instance;
+
+    private MetaProxy() {
+
+    }
+
+    public static MetaProxy getInstance() {
+        synchronized (MetaProxy.class) {
+            if (instance == null) {
+                synchronized (MetaProxy.class) {
+                    instance = new MetaProxy();
+                }
+            }
+        }
+
+        return instance;
+    }
 }
