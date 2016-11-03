@@ -9,14 +9,14 @@
     <!-- 黑名单相关配置 -->
     <blackList>
         <!--<class>-->
-            <!--<name>cn.zyf.protocols.impl.DefaultBlackListManager</name>-->
-            <!--<params>-->
-                <!--<paramName1 type="String" idx="0">paramValue</paramName1>-->
-                <!--<paramName2 type="Integer" idx="1">10</paramName2>-->
-                <!--<paramName3 type="Short" idx="2">20</paramName3>-->
-                <!--<paramName4 type="Long" idx="3">30</paramName4>-->
-                <!--<paramName5 type="Boolean" idx="4">false</paramName5>-->
-            <!--</params>-->
+        <!--<name>cn.zyf.protocols.impl.DefaultBlackListManager</name>-->
+        <!--<params>-->
+        <!--<paramName1 type="String" idx="0">paramValue</paramName1>-->
+        <!--<paramName2 type="Integer" idx="1">10</paramName2>-->
+        <!--<paramName3 type="Short" idx="2">20</paramName3>-->
+        <!--<paramName4 type="Long" idx="3">30</paramName4>-->
+        <!--<paramName5 type="Boolean" idx="4">false</paramName5>-->
+        <!--</params>-->
         <!--</class>-->
         <path>xxxx</path>
         <!-- reload period in seconds -->
@@ -47,14 +47,14 @@
 
     <!-- 设置系统的元数据信息存放的集群 -->
     <meta>
-        <name>xxxx</name> <!-- cluster name in cluster_conf.xml  only hbase/cassandra/mysql/oracle -->
-        <option>
+        <name>cluster1</name> <!-- cluster name in cluster_conf.xml  only hbase/cassandra/mysql/oracle -->
+        <options>
             <dbName>db</dbName>
             <tableName>table</tableName>
             <cfName>cf</cfName>
-            <cnname>cnname</cnname>
-            <ugi>user:user</ugi>
-        </option>
+            <cnName>cn</cnName>
+            <ugi>ugi:ugi</ugi>
+        </options>
     </meta>
 
 </configuration>

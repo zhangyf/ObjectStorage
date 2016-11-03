@@ -50,6 +50,8 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -107,34 +109,19 @@ public class ObjectStorageServer {
             throws NoSuchMethodException, ClassNotFoundException,
             InvocationTargetException, IllegalAccessException, InstantiationException {
 
-        ConfigTreeNode classNode = null;
-        String className = "";
-        if (configTreeNode.containsByName("class")) {
-            for (ConfigTreeNode ctn : configTreeNode.getByName("class")) {
-                classNode = ctn;
-                break;
-            }
-
-            if (classNode != null && classNode.containsByName("name")) {
-                for (ConfigTreeNode ctn : classNode.getByName("name")) {
-                    className = ctn.getStringValue();
-                    break;
-                }
-            }
-        }
+        ConfigTreeNode classNode = configTreeNode.getByName("class").stream().findFirst().orElse(null);
+        String className = (classNode != null) ? classNode.getByName("name").stream().findFirst().orElse(null).getStringValue() : "";
 
         LOG.info("custom class:\t" + className);
 
-        ConfigTreeNode paramsNode = null;
+        ConfigTreeNode paramsNode;
         String[] paramsNames;
         Class<?>[] paramsTypes = null;
         Object[] paramsObjs = null;
         if (classNode != null && classNode.containsByName("params")) {
             int idx = 0;
-            for (ConfigTreeNode ctn : classNode.getByName("params")) {
-                paramsNode = ctn;
-                break;
-            }
+            paramsNode = classNode.getByName("params").stream().findFirst().orElse(null);
+
             if (paramsNode != null) {
                 paramsNames = new String[paramsNode.getValue().size()];
                 for (Object ctn : paramsNode.getValue()) {
@@ -171,19 +158,17 @@ public class ObjectStorageServer {
         assert serviceConfig != null;
         assert clusterConfig != null;
 
-        String bindStr = DEFAULT_BIND_STR;
-        int packageSize = DEFAULT_PACKAGE_SIZE;
-        if (serviceConfig.containsByName("bind")) {
-            for (ConfigTreeNode configTreeNode : serviceConfig.getByName("bind")) {
-                bindStr = configTreeNode.getStringValue();
-                break;
-            }
+        String bindStr = (serviceConfig.containsByName("bind") && serviceConfig.getByName("bind").stream().findAny().isPresent()) ?
+                serviceConfig.getByName("bind").stream().findAny().orElse(null).getStringValue()
+                :
+                DEFAULT_BIND_STR;
 
-            for (ConfigTreeNode configTreeNode : serviceConfig.getByName("packageSize")) {
-                packageSize = configTreeNode.getIntegerValue();
-                break;
-            }
-        }
+        int packageSize = (serviceConfig.containsByName("packageSize")
+                && serviceConfig.getByName("packageSize").stream().findAny().isPresent()) ?
+                serviceConfig.getByName("packageSize").stream().findAny().orElse(null).getIntegerValue()
+                :
+                DEFAULT_PACKAGE_SIZE;
+
 
         String[] entries = bindStr.split(":");
         assert entries.length == 2;
@@ -198,31 +183,19 @@ public class ObjectStorageServer {
         long reloadBlackListPeriod = DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS;
         String blackListFilePath = null;
 
-        ConfigTreeNode blacklistConfig = null;
-        if (serviceConfig.containsByName("blackList")) {
-            for (ConfigTreeNode ctn : serviceConfig.getByName("blackList")) {
-                blacklistConfig = ctn;
-            }
-        }
+        ConfigTreeNode blacklistConfig = serviceConfig.getByName("blackList").stream().findAny().orElse(null);
 
         if (blacklistConfig != null) {
             if (blacklistConfig.containsByName("class")) {
                 blackListManager = (BlackListManager) createObjectByReflection(blacklistConfig);
             } else {
                 blackListManager = new DefaultBlackListManager();
-                blackListFilePath = null;
-                if (blacklistConfig.containsByName("path")) {
-                    for (ConfigTreeNode ctn : blacklistConfig.getByName("path")) {
-                        blackListFilePath = ctn.getStringValue();
-                    }
-                }
+                blackListFilePath = blacklistConfig.getByName("path").stream().findAny().orElse(null).getStringValue();
 
-                reloadBlackListPeriod = DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS;
-                if (blacklistConfig.containsByName("period")) {
-                    for (ConfigTreeNode ctn : blacklistConfig.getByName("period")) {
-                        reloadBlackListPeriod = ctn.getLongValue();
-                    }
-                }
+                reloadBlackListPeriod = blacklistConfig.getByName("period").stream().findAny().isPresent() ?
+                        blacklistConfig.getByName("period").stream().findAny().orElse(null).getLongValue()
+                        :
+                        DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS;
 
                 LOG.info("blacklist file path:\t" + blackListFilePath);
                 LOG.info("reload blacklist period:\t" + reloadBlackListPeriod + " sec");
@@ -235,40 +208,46 @@ public class ObjectStorageServer {
                 0, reloadBlackListPeriod, TimeUnit.SECONDS);
 
         // init authenticationManager
-        if (serviceConfig.containsByName("authentication")) {
-            for (ConfigTreeNode ctn : serviceConfig.getByName("authentication")) {
-                if (ctn.containsByName("class")) {
-                    authenticationManager = (AuthenticationManager) createObjectByReflection(ctn);
-                }
-            }
-        } else {
-            LOG.info("use default Authentication");
-            authenticationManager = new DefaultAuthenticationManager();
-        }
+        authenticationManager =
+                (serviceConfig.getByName("authentication").stream().findFirst().isPresent()
+                        && serviceConfig.getByName("authentication").stream().findFirst().orElse(null)
+                        .getByName("class").stream().findFirst().isPresent()) ?
+                        (AuthenticationManager) createObjectByReflection(
+                                serviceConfig.getByName("authentication").stream().findFirst().orElse(null))
+                        :
+                        new DefaultAuthenticationManager();
+
 
         // init authorizationManager
-        if (serviceConfig.containsByName("authorization")) {
-            for (ConfigTreeNode ctn : serviceConfig.getByName("authorization")) {
-                if (ctn.containsByName("class")) {
-                    authorizationManager = (AuthorizationManager) createObjectByReflection(ctn);
-                }
-            }
-        } else {
-            LOG.info("use default Authorization");
-            authorizationManager = new DefaultAuthorizationManager();
-        }
+        authorizationManager =
+                (serviceConfig.getByName("authorization").stream().findFirst().isPresent()
+                        && serviceConfig.getByName("authorization").stream().findFirst().orElse(null)
+                        .getByName("class").stream().findFirst().isPresent()) ?
+                        (AuthorizationManager) createObjectByReflection(
+                                serviceConfig.getByName("authorization").stream().findFirst().orElse(null))
+                        :
+                        new DefaultAuthorizationManager();
 
         // init clusterManager
         clusterManager = new DefaultClusterManager(clusterConfig);
-        for (ConfigTreeNode ctn : serviceConfig.getByName("meta")) {
-            for (ConfigTreeNode node : ctn.getByName("name")) {
-                LOG.info("set meta cluster:\t" + node.getStringValue());
-                clusterManager.setMetaCluster(node.getStringValue());
-            }
+        ConfigTreeNode metaNode = serviceConfig.getByName("meta").stream().findFirst().orElse(null);
+        if (metaNode != null && metaNode.getByName("name").stream().findFirst().isPresent()) {
+            String metaClusterName = metaNode.getByName("name").stream().findFirst().orElse(null).getStringValue();
+            LOG.info("set meta cluster:\t" + metaClusterName);
+            clusterManager.setMetaCluster(metaClusterName);
 
-            for (ConfigTreeNode node : ctn.getByName("paramters")) {
+            Map<String, String> metaOptions = new HashMap<>();
 
+            for (Object obj : metaNode.getByName("options").stream().findFirst().orElse(null).getValue()) {
+                ConfigTreeNode ctn = (ConfigTreeNode) obj;
+                LOG.info("set meta cluster options:\t" + ctn.getName() + "=" + ctn.getStringValue());
+                metaOptions.put(ctn.getName(), ctn.getStringValue());
             }
+            clusterManager.setMetaOption(metaOptions);
+
+        } else {
+            LOG.error("set meta cluster failed ");
+            System.exit(-1);
         }
 
         LOG.info("================================");
