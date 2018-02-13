@@ -22,6 +22,7 @@ package cn.zyf.handler;
 import cn.zyf.ObjectStorageServer;
 import cn.zyf.context.RequestInfo;
 import cn.zyf.protocols.Cluster;
+import cn.zyf.proxy.MetaProxy;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpMethod;
@@ -43,9 +44,7 @@ public class ObjectStorageHandler extends SimpleChannelInboundHandler<RequestInf
     }
 
     private String getBucketConfigByName(String bucketName) {
-        String config = "";
-        Cluster metaCluster = ObjectStorageServer.clusterManager.getMetaCluster();
-        metaCluster.connect();
+        String config = MetaProxy.getInstance().getBucketMetaByName(bucketName);
 
         return config;
     }

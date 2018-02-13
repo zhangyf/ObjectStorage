@@ -20,17 +20,45 @@
 package cn.zyf.protocols.impl.cluster;
 
 import cn.zyf.protocols.Cluster;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by zhangyufeng on 2016/11/1.
  */
 public class CassandraClusterImpl extends Cluster {
+    private static final Logger LOG = LoggerFactory.getLogger(CassandraClusterImpl.class);
+    private com.datastax.driver.core.Cluster cluster;
+    private Session session;
+
     @Override
     public void connect() {
+        com.datastax.driver.core.Cluster.Builder builder = com.datastax.driver.core.Cluster.builder();
+        getHosts().forEach(e -> {
+            String[] entries = e.split(":");
+            if (entries.length == 2) {
+                builder.addContactPoint(entries[0]);
+            }
+        });
+        builder.withClusterName(getName());
+        cluster = builder.build();
+        session = cluster.connect();
+        LOG.info("connect to " + getName() + " success");
+    }
+
+    @Override
+    public void close() {
+        if (cluster != null) {
+            cluster.close();
+        }
     }
 
     @Override
     public Object get(Object... args) {
-        return null;
+        ResultSet rs = session.execute("select release_version from system.local");
+        return rs.one();
     }
 }

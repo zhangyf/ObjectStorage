@@ -84,6 +84,7 @@ public abstract class Cluster {
     }
 
     public abstract void connect();
+    public abstract void close();
     public abstract Object get(Object ...args);
 
 

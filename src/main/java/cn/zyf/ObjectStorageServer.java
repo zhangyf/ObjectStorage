@@ -45,16 +45,18 @@ import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.security.krb5.Config;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by zhangyufeng on 2016/10/21.
@@ -131,6 +133,18 @@ public class ObjectStorageServer {
                 paramsTypes = new Class[paramsNames.length];
                 paramsObjs = new Object[paramsNames.length];
 
+//                paramsObjs = Arrays.stream(paramsNames).flatMap(paramName -> {
+//                    paramsNode.getByName(paramName).stream().map(ctn ->
+//                    {
+//                        try {
+//                            return ctn.getClass().getMethod("get" + ctn.getAttributes().get("type") + "Value").invoke(ctn);
+//                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+//                            e.printStackTrace();
+//                            return null;
+//                        }
+//                    });
+//                }).collect(Collectors.toList());
+
                 for (String paramName : paramsNames) {
                     for (ConfigTreeNode ctn : paramsNode.getByName(paramName)) {
                         idx = Integer.parseInt(ctn.getAttributes().get("idx"));
@@ -158,16 +172,21 @@ public class ObjectStorageServer {
         assert serviceConfig != null;
         assert clusterConfig != null;
 
-        String bindStr = (serviceConfig.containsByName("bind") && serviceConfig.getByName("bind").stream().findAny().isPresent()) ?
-                serviceConfig.getByName("bind").stream().findAny().orElse(null).getStringValue()
-                :
-                DEFAULT_BIND_STR;
 
-        int packageSize = (serviceConfig.containsByName("packageSize")
-                && serviceConfig.getByName("packageSize").stream().findAny().isPresent()) ?
-                serviceConfig.getByName("packageSize").stream().findAny().orElse(null).getIntegerValue()
-                :
-                DEFAULT_PACKAGE_SIZE;
+        String bindStr = serviceConfig.getByName("bind").stream().findFirst().orElseGet(() -> {
+            ConfigTreeNode ctn = new ConfigTreeNode();
+            ctn.setName("bind");
+            ctn.addValue(DEFAULT_BIND_STR);
+            return ctn;
+        }).getStringValue();
+
+
+        int packageSize = serviceConfig.getByName("packageSize").stream().findFirst().orElseGet(() -> {
+            ConfigTreeNode ctn = new ConfigTreeNode();
+            ctn.setName("packageSize");
+            ctn.addValue(DEFAULT_PACKAGE_SIZE);
+            return ctn;
+        }).getIntegerValue();
 
 
         String[] entries = bindStr.split(":");
@@ -190,10 +209,12 @@ public class ObjectStorageServer {
                 blackListManager = (BlackListManager) createObjectByReflection(blacklistConfig);
             } else {
                 blackListManager = new DefaultBlackListManager();
-                blackListFilePath = blacklistConfig.getByName("path").stream().findAny().orElse(null).getStringValue();
+                blackListFilePath = Objects.requireNonNull(blacklistConfig.getByName("path").stream()
+                        .findAny().orElse(null)).getStringValue();
 
                 reloadBlackListPeriod = blacklistConfig.getByName("period").stream().findAny().isPresent() ?
-                        blacklistConfig.getByName("period").stream().findAny().orElse(null).getLongValue()
+                        Objects.requireNonNull(blacklistConfig.getByName("period").stream().findAny()
+                                .orElse(null)).getLongValue()
                         :
                         DEFAULT_RELOAD_BLACK_LIST_INTERVAL_IN_SECONDS;
 
@@ -231,8 +252,8 @@ public class ObjectStorageServer {
         // init clusterManager
         clusterManager = new DefaultClusterManager(clusterConfig);
         ConfigTreeNode metaNode = serviceConfig.getByName("meta").stream().findFirst().orElse(null);
-        if (metaNode != null && metaNode.getByName("name").stream().findFirst().isPresent()) {
-            String metaClusterName = metaNode.getByName("name").stream().findFirst().orElse(null).getStringValue();
+        if (metaNode != null && metaNode.getByName("cluster").stream().findFirst().isPresent()) {
+            String metaClusterName = metaNode.getByName("cluster").stream().findFirst().orElse(null).getStringValue();
             LOG.info("set meta cluster:\t" + metaClusterName);
             clusterManager.setMetaCluster(metaClusterName);
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<clusters>
+    <cluster1 type="cassandra">
+        <node>10.173.20.91:9160</node>
+        <node>10.173.20.93:9160</node>
+        <node>10.173.20.142:9160</node>
+        <node>10.173.20.82:9160</node>
+        <node>10.173.20.145:9160</node>
+        <node>10.173.20.137:9160</node>
+        <node>10.173.20.120:9160</node>
+    </cluster1>
+
+    <cluster2 type="hbase">
+        <zookeeper>
+            <zkHost>hostname1:2181,hostname2:2181,hostname3:2181</zkHost>
+            <zkPath priority="3">/path/to/node</zkPath>
+            <zkPath priority="2">/path/to/node</zkPath>
+            <zkPath priority="1">/path/to/node</zkPath>
+        </zookeeper>
+    </cluster2>
+
+    <cluster3 type="hdfs">
+        <uri>hdfs://xxx.xxx.xxx.xxx:port</uri>
+    </cluster3>
+
+    <cluster4 type="redis/memcached">
+        <node>hostname1:port,hostname2:port,hostname3:port</node>
+    </cluster4>
+</clusters>

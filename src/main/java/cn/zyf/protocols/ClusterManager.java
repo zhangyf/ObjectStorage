@@ -29,4 +29,5 @@ public abstract class ClusterManager {
     public abstract void setMetaCluster(String name);
     public abstract Cluster getMetaCluster();
     public abstract void setMetaOption(Map<String, String> option);
+    public abstract Map<String, String> getMetaOption();
 }

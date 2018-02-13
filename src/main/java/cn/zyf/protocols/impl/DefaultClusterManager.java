@@ -111,6 +111,11 @@ public class DefaultClusterManager extends ClusterManager {
     }
 
     @Override
+    public Map<String, String> getMetaOption() {
+        return metaOption;
+    }
+
+    @Override
     public Cluster getClusterByName(String name) {
         return clusters.get(name);
     }

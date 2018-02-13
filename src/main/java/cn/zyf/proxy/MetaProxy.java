@@ -19,6 +19,8 @@
 
 package cn.zyf.proxy;
 
+import cn.zyf.ObjectStorageServer;
+import cn.zyf.protocols.Cluster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +30,33 @@ import org.slf4j.LoggerFactory;
 public class MetaProxy {
     private static final Logger LOG = LoggerFactory.getLogger(MetaProxy.class);
     private static MetaProxy instance;
+    private static String dbName;
+    private static String tableName;
+    private static String cfName;
+    private static String cnName;
+    private static String ugi;
+    private Cluster metaCluster;
 
     private MetaProxy() {
+        ObjectStorageServer.clusterManager.getMetaOption().entrySet().forEach(e -> {
+            if (e.getKey().equals("dbName")) {
+                dbName = e.getValue();
+            } else if (e.getKey().equals("tableName")) {
+                tableName = e.getValue();
+            } else if (e.getKey().equals("cfName")) {
+                cfName = e.getValue();
+            } else if (e.getKey().equals("cnName")) {
+                cnName = e.getValue();
+            } else if (e.getKey().equals("ugi")) {
+                ugi = e.getValue();
+            }
+        });
+        metaCluster = ObjectStorageServer.clusterManager.getMetaCluster();
+        metaCluster.connect();
+    }
 
+    public String getBucketMetaByName(String bucketName) {
+        return (String) metaCluster.get(tableName, cfName, cnName, bucketName);
     }
 
     public static MetaProxy getInstance() {
@@ -41,6 +67,7 @@ public class MetaProxy {
                 }
             }
         }
+
 
         return instance;
     }

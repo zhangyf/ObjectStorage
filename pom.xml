@@ -33,16 +33,25 @@
             <version>2.4.1</version>
         </dependency>
 
+        <!-- dependencies for utils -->
         <dependency>
             <groupId>com.xyz</groupId>
             <artifactId>utils</artifactId>
             <version>1.0.1</version>
         </dependency>
 
+        <!-- dependencies for json -->
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20140107</version>
+        </dependency>
+
+        <!-- dependencies for cassandra client -->
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+            <version>3.1.0</version>
         </dependency>
     </dependencies>
 
@@ -60,6 +69,11 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>cn.zyf.ObjectStorageServer</mainClass>
+                                </manifest>
+                            </archive>
                         </configuration>
                     </execution>
                 </executions>

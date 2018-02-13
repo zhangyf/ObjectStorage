@@ -6,6 +6,7 @@ An ObjectStorage based on netty. ObjectStorage APIs are partly compatible with A
 **GPL v3.0**
 
 ## 2. Dependencies
+
 ### 2.1 Libraries
  + [netty-all](http://netty.io/)
  + log4j-api
@@ -13,6 +14,7 @@ An ObjectStorage based on netty. ObjectStorage APIs are partly compatible with A
  + log4j-slf4j-impl
  + [utils](https://github.com/zhangyf/util) 
  + json
+ 
 ### 2.2 Build-time requirement
  + Latest stable [Oracle JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
  + Latest stable [Apache Maven](http://maven.apache.org/)
@@ -37,50 +39,61 @@ After building two jars will be generated under target directory:
     <configuration>
         <!-- bind server:port -->
         <bind>0.0.0.0:8484</bind>
-
+    
         <!-- max request size in bytes -->
         <packageSize>65535</packageSize>
-
-        <!-- black list config -->
+    
+        <!-- 黑名单相关配置 -->
         <blackList>
-            <!-- config it if want to use custom BlackListManager implenment
-                <class>
-                <name>net.qihoo.protocols.impl.DefaultBlackListManager</name>
-                <params>
-                    <paramName type="String">paramValue</paramName>
-                </params>
-                </class>
-            -->
-            
-            <!-- black list file path -->
+            <!--<class>-->
+            <!--<name>cn.zyf.protocols.impl.DefaultBlackListManager</name>-->
+            <!--<params>-->
+            <!--<paramName1 type="String" idx="0">paramValue</paramName1>-->
+            <!--<paramName2 type="Integer" idx="1">10</paramName2>-->
+            <!--<paramName3 type="Short" idx="2">20</paramName3>-->
+            <!--<paramName4 type="Long" idx="3">30</paramName4>-->
+            <!--<paramName5 type="Boolean" idx="4">false</paramName5>-->
+            <!--</params>-->
+            <!--</class>-->
             <path>xxxx</path>
-            <!-- reload black list file period in seconds -->
+            <!-- reload period in seconds -->
             <period>60</period>
         </blackList>
-
-        <!-- config it if want to use custom authentication -->
+    
+        <!-- 如果不使用外部认证，则不需要配置该项 -->
         <authentication>
+            <!--
             <class>org.pacakge.classname</class>
             <params>
+    
             </params>
+            -->
         </authentication>
-
-        <!-- config it if want to use custom authorization -->
+    
+        <!-- 如果不使用外部鉴权，则不需要配置该项 -->
         <authorization>
+            <!--
             <class>org.pacakge.classname</class>
             <params>
             </params>
+            -->
         </authorization>
-
-        <!-- config it to use a cluster for cache.
-         xxx is a name presented in cluster config file，whose type is valid only for redis/memcached -->
+    
+        <!-- 如果不使用外部cache，则不需要配置该项。xxx为cluster_conf.xml中已有的名字，且type仅为redis/memcached -->
         <cache>xxxx</cache>
-
-        <!-- config it to specify where object meta should store -->
-        <storage>
-            <!-- name is presented in cluster config file and only be one of hbase/cassandra/mysql/oracle -->
-            <meta>xxxx</meta> 
-        </storage>
+    
+        <!-- 设置系统的元数据信息存放的集群 -->
+        <meta>
+            <name>cluster1</name> <!-- cluster name in cluster_conf.xml  only hbase/cassandra/mysql/oracle -->
+            <options>
+                <dbName>db</dbName>
+                <tableName>table</tableName>
+                <cfName>cf</cfName>
+                <cnName>cn</cnName>
+                <ugi>ugi:ugi</ugi>
+            </options>
+        </meta>
+    
     </configuration>
 
 #### 4.1.2 Cluster Config

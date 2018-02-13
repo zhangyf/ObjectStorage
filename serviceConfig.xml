@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration>
     <!-- bind server:port -->
-    <bind>0.0.0.0:8484</bind>
+<!--    <bind>0.0.0.0:8585</bind> -->
 
     <!-- max request size in bytes -->
     <packageSize>65535</packageSize>
@@ -18,7 +18,7 @@
         <!--<paramName5 type="Boolean" idx="4">false</paramName5>-->
         <!--</params>-->
         <!--</class>-->
-        <path>xxxx</path>
+        <path>/Users/zhangyufeng/Workspace/github/ObjectStorage/blackList.log</path>
         <!-- reload period in seconds -->
         <period>60</period>
     </blackList>
@@ -43,24 +43,19 @@
     </authorization>
 
     <!-- 如果不使用外部cache，则不需要配置该项。xxx为cluster_conf.xml中已有的名字，且type仅为redis/memcached -->
-    <cache>xxxx</cache>
+<!--    <cache>xxxx</cache>-->
 
     <!-- 设置系统的元数据信息存放的集群 -->
-    <meta>
+	<meta>
         <cluster>cluster1</cluster> <!-- cluster name in cluster_conf.xml  only hbase/cassandra/mysql/oracle -->
         <options>
             <db>objects_storage_db</db>
             <tables>
-                <buckets>
-                    <col primary_key="1" type="int">bid</col>
-                    <col type="text">name</col>
-                    <col type="text">desc</col>
-                </buckets>
-                <authorizations></authorizations>
-                <authentications></authentications>
+                <table cf="" cn="">buckets</table>
+                <table cf="" cn="">authorizations</table>
+                <table cf="" cn="">authentications</table>
             </tables>
             <ugi>ugi:ugi</ugi>
         </options>
     </meta>
-
 </configuration>
